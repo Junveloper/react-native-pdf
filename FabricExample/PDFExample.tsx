@@ -152,6 +152,22 @@ const PDFExample = () => {
   const [, setBlob] = useState<Blob>();
   const { width } = useWindowDimensions();
 
+  const [reloadLoop, setReloadLoop] = useState(false);
+  const [spacing, setSpacing] = useState(10);
+  const loadCountRef = useRef(0);
+  const [loadCount, setLoadCount] = useState(0);
+
+  useEffect(() => {
+    if (!reloadLoop) {
+      return;
+    }
+    const interval = setInterval(
+      () => setSpacing(current => (current === 10 ? 11 : 10)),
+      120,
+    );
+    return () => clearInterval(interval);
+  }, [reloadLoop]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -250,11 +266,28 @@ const PDFExample = () => {
           setDirectionalLockEnabled(currentValue => !currentValue);
         }}
       />
+      <View style={styles.row}>
+        <TouchableHighlight
+          style={styles.btn}
+          testID="ReloadLoop"
+          onPress={() => setReloadLoop(current => !current)}
+        >
+          <Text style={styles.btnText}>
+            {reloadLoop ? 'Stop reload loop' : 'Start reload loop'}
+          </Text>
+        </TouchableHighlight>
+        <View style={styles.btnText}>
+          <Text style={styles.btnText} testID="LoadCount">
+            {`Loads: ${loadCount}`}
+          </Text>
+        </View>
+      </View>
       <View style={widthStyles.pdfContainer}>
         <Pdf
           ref={pdfRef}
           trustAllCerts={false}
           source={source}
+          spacing={spacing}
           scale={scale}
           horizontal={horizontal}
           directionalLockEnabled={directionalLockEnabled}
@@ -267,6 +300,9 @@ const PDFExample = () => {
             tableContents: unknown,
           ) => {
             setNumberOfPages(loadedNumberOfPages);
+            loadCountRef.current += 1;
+            setLoadCount(loadCountRef.current);
+            console.log(`reload loop: load ${loadCountRef.current}`);
             console.log(`total page count: ${loadedNumberOfPages}`);
             console.log(tableContents, dims, filePath);
           }}
